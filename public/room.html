@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css">
+    <title>Room</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <header class="main-header">
+            <div class="room-name">{{roomId}}</div>
+            <div class="right">
+                <div v-if="roomId != '...' && !isChatOpen" @click="toggleChats" class="icon-btn">
+                    <img src="./assets/send.svg" alt=""> Open chat
+                </div>
+
+                <div v-if="roomId != '...' && isChatOpen" @click="toggleChats" class="icon-btn">
+                    <img src="./assets/send.svg" alt=""> Hide chat
+                </div>
+
+                <div v-if="roomId != '...'" @click="leaveRoom" class="icon-btn alert">Leave room</div>
+            </div>
+        </header>
+
+        <div class="bottom-controls-wrapper">
+
+            <div class="bottom-controls">
+                <div v-if="!isMuted" @click="initMute" class="icon-container">
+                    <div class="icon mute-btn ">
+                        <img src="./assets/mic.svg " alt=" ">
+                    </div>
+
+                    <p> Mute </p>
+                </div>
+
+                <div v-if="isMuted" @click="initMute" class="icon-container">
+                    <div class="icon mute-btn">
+                        <img src="./assets/mic-off.svg" alt="">
+                    </div>
+
+                    <p>unmute</p>
+                </div>
+
+                <div class="icon-container">
+                    <div class="icon">
+                        <img src="./assets/volume.svg" alt="">
+                    </div>
+
+                    <p>Speaker</p>
+                </div>
+
+
+                <div v-if="isVideoOpen" @click="initHideVideo" class="icon-container">
+                    <div class=" icon primary-color-btn ">
+                        <img src="./assets/video.svg " alt=" ">
+
+                    </div>
+
+                    <p>Video</p>
+                </div>
+
+                <div v-if="!isVideoOpen" @click="initHideVideo" class="icon-container">
+                    <div class="icon primary-color-btn">
+                        <img src="./assets/video-off.svg" alt="">
+
+                    </div>
+
+                    <p>Video off</p>
+                </div>
+
+                <div @click="shareScreen" class="icon-container">
+                    <div class="icon">
+                        <img src="./assets/rss.svg" alt="">
+                    </div>
+
+                    <p>Share screen</p>
+                </div>
+
+                <div @click="shareScreen" class="icon-container">
+                    <div class="icon success">
+                        <img src="./assets/link.svg" alt="">
+                    </div>
+
+                    <p>Invite</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="chats-container" v-if="isChatOpen">
+
+            <header>
+                <div class="title">Room chat</div>
+
+                <div class="chats-close-btn" @click="toggleChats">&times;</div>
+            </header>
+
+            <div class="messages-main">
+                <p v-for="message in messages">
+                    {{message}}
+                </p>
+            </div>
+
+            <div class="input-container">
+
+                <input type="text" id="message-input-box" placeholder="Type a message ...">
+
+                <div class="send-btn" @click="sendMessage">SEND</div>
+            </div>
+        </div>
+
+        <div id="video-grid"></div>
+        <video id="local-video" autoplay muted></video>
+
+        <!-- <footer>&copy;2021 - 2020 Boom.co</footer> -->
+
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
+
+    <script>
+        const vueApp = new Vue({
+            el: '#app',
+            data: {
+                socket: io(),
+                localStream: null,
+                isChatOpen: false,
+                isMuted: false,
+                isVideoOpen: true,
+                users: {},
+                messages: [],
+                roomId: '...',
+
+
+                constraints: {
+                    audio: {
+                        echoCancellation: {
+                            exact: true,
+                        }
+                    },
+                    video: {
+                        frameRate: 60,
+                    },
+
+                },
+
+                screenShareConstraints: {
+                    audio: true,
+                    video: true,
+                },
+
+
+                configuration: {
+                    "iceServers": [{
+                            "urls": "stun:stun.l.google.com:19302"
+                        },
+
+                        {
+                            url: 'turn:192.158.29.39:3478?transport=udp',
+                            credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+                            username: '28224511:1379330808'
+                        }
+                    ]
+                }
+            },
+
+            mounted() {
+
+                let url = new URL(window.location.href)
+
+                this.roomId = url.searchParams.get('r')
+
+                this.init()
+
+                this.socket.on('init-receive', socketId => {
+
+                    console.log('on-init-receive', socketId)
+
+                    //add peer send here
+                    this.addPeer(socketId, false)
+
+                    //iniialize send
+                    this.socket.emit('init-send', socketId)
+
+                    //show user joined alert
+
+                })
+
+                this.socket.on('signal', data => {
+
+                    console.log('on-signal', data)
+
+                    this.users[data.socketId].signal(data.signal)
+
+                })
+
+                this.socket.on('init-send', socketId => {
+
+                    console.log('on-init-send', socketId)
+
+                    this.addPeer(socketId, true)
+
+                })
+
+
+                this.socket.on('remove-user', socketId => {
+
+                    console.log('remove-user', socketId)
+
+                    for (let user in this.users) {
+
+                        this.removeUser(socketId)
+
+                    }
+                })
+
+                this.socket.on('got-message', message => {
+
+                    this.messages.push(message)
+
+                })
+
+                this.socket.on('user-remove-video', userId => {
+
+                    this.hideVideo(userId)
+                })
+
+                this.socket.on('user-remove-audio', userId => {
+
+                    this.mute(userId)
+                })
+
+                this.socket.on('got-share-screen', userId => {
+                    this.replaceStream(userId)
+                })
+
+            },
+
+            methods: {
+
+                async shareScreen() {
+                    let localVideoElement = document.getElementById('local-video')
+
+                    await navigator.mediaDevices.getDisplayMedia(this.screenShareConstraints).then(stream => {
+
+                        // console.log(`local-stream`, stream)
+
+                        localVideoElement.srcObject = stream
+
+                        this.localStream = null
+                        this.localStream = stream
+
+                        this.socket.emit('join-room', this.roomId)
+
+                    })
+                },
+
+                replaceStream(userId) {
+
+                    // console.log('adding-screen-share-stream', userId)
+
+                    // let userVideoElement = document.getElementById(userId)
+
+                    // if (!userVideoElement) return
+
+                    // const tracks = userVideoElement.srcObject.getVideoTracks()
+
+                    // console.log(tracks)
+
+                    // tracks.stop()
+
+                    // tracks.forEach(track => {
+
+                    //     track.stop()
+
+                    //     console.log(track)
+                    // });
+                },
+
+                sendInvite() {
+                    // this.roomId.setSelectionRange(0, 999999)
+
+                    var link = this.roomId
+
+                    document.execCommand("copy")
+                },
+
+                toggleChats() {
+                    this.isChatOpen = !this.isChatOpen
+                },
+
+                sendMessage() {
+                    let messageElement = document.getElementById('message-input-box').value
+
+                    if (messageElement != '') {
+                        this.socket.emit('sent-message', messageElement, this.roomId)
+
+                        messageElement = ''
+                    }
+
+
+                },
+
+                initMute() {
+                    this.isMuted = !this.isMuted
+
+                    this.socket.emit('remove-audio')
+                },
+
+                initHideVideo() {
+                    this.isVideoOpen = !this.isVideoOpen
+
+                    let localVideoElement = document.getElementById('local-video')
+
+                    if (!this.isVideoOpen) {
+                        localVideoElement.style.display = "none"
+                    }
+
+                    if (this.isVideoOpen) {
+                        localVideoElement.style.display = "block"
+                    }
+
+
+
+                    this.socket.emit('remove-video')
+                },
+
+
+                hideVideo(userId) {
+
+
+                    console.log('hide-my-video', userId)
+
+                    let userVideoElement = document.getElementById(userId)
+
+                    if (!userVideoElement) return
+
+                    const tracks = userVideoElement.srcObject.getTracks()
+
+                    tracks.forEach(track => {
+
+                        if (track.kind == 'video') {
+                            track.enabled = !track.enabled
+
+                            console.log(userVideoElement.srcObject)
+                        }
+                    });
+
+                },
+
+                mute(userId) {
+
+                    console.log('mute', userId)
+
+                    let userVideoElement = document.getElementById(userId)
+
+                    if (!userVideoElement) return
+
+                    const tracks = userVideoElement.srcObject.getTracks()
+
+                    tracks.forEach(track => {
+
+                        if (track.kind == 'audio') {
+                            track.enabled = !track.enabled
+                        }
+                    });
+
+                },
+
+                async init() {
+
+                    let localVideoElement = document.getElementById('local-video')
+
+                    await navigator.mediaDevices.getUserMedia(this.constraints).then(stream => {
+
+                        console.log(`local-stream`, stream)
+
+                        localVideoElement.srcObject = stream
+
+                        this.localStream = stream
+
+                        this.socket.emit('join-room', this.roomId)
+
+                    })
+
+                },
+
+                leaveRoom() {
+                    window.history.back()
+                },
+
+                addPeer(userId, isInitiator) {
+
+                    console.log('add-peer', userId, isInitiator)
+
+                    this.users[userId] = new SimplePeer({
+                        initiator: isInitiator,
+                        stream: this.localStream,
+                        config: this.configuration
+                    })
+
+                    this.users[userId].on('signal', data => {
+                        this.socket.emit('signal', {
+                            signal: data,
+                            socketId: userId,
+                        })
+                    })
+
+                    this.users[userId].on('stream', stream => {
+                        console.log('add-peer-stream', stream)
+
+                        let videoElement = document.createElement('video')
+                        let videoGrid = document.getElementById('video-grid')
+
+
+                        videoElement.srcObject = stream
+                        videoElement.id = userId
+                        videoElement.autoplay = true
+                        videoElement.className = "remote-video"
+                        videoElement.playsInline
+                        videoElement.playoutDelayHint = 1
+
+                        videoGrid.appendChild(videoElement)
+
+                        console.log(videoElement.currentTime)
+                    })
+
+                },
+
+                removeUser(userId) {
+
+                    let userVideoElement = document.getElementById(userId)
+
+                    if (!userVideoElement) return
+
+                    const tracks = userVideoElement.srcObject.getTracks()
+
+                    tracks.forEach(track => {
+                        track.stop()
+                    });
+
+                    userVideoElement.srcObject = null
+                    userVideoElement.parentNode.removeChild(userVideoElement)
+
+                },
+
+
+            }
+        }, )
+    </script>
+</body>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>

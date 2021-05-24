@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css">
+    <title>kaBoomBoom | Create room</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body style="background:#1A202C">
+    <div id="app">
+
+
+        <div id="room-selection-container">
+            <div class="title-big">Boom</div>
+            <label>A place to hang out with groups & communities</label><br>
+
+            <div id="input-container">
+                <input id="room-input-box" placeholder="Room name" type="text" />
+                <button id="join-button" @click="init">CONNECT</button>
+                <!-- <a href="/room.html?r=${roomId}" id="join-button" @click="init">CONNECT</a> -->
+            </div>
+        </div>
+
+        <footer>&copy;2021 - 2020 Boom.co</footer>
+
+    </div>
+
+
+    <script>
+        const vueApp = new Vue({
+                el: '#app',
+                data: {
+                    roomIdUrl: '',
+                },
+
+                methods: {
+
+
+
+                    init() {
+
+                        let roomIdElement = document.getElementById('room-input-box').value
+
+                        if (roomIdElement != '') {
+
+                            window.location.href = "/room.html?r=" + roomIdElement
+                        }
+                        // let params =
+
+                        // roomContainer.style.display = "none"
+                        // this.roomId = roomIdElement
+
+                        // await navigator.mediaDevices.getUserMedia(this.constraints).then(stream => {
+
+                        //     console.log(`local-stream`, stream)
+
+                        //     localVideoElement.srcObject = stream
+
+                        //     this.localStream = stream
+
+                        //     this.socket.emit('join-room', roomIdElement)
+
+                        // })
+                    }
+
+                },
+
+
+
+            }
+            // },
+        )
+    </script>
+</body>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
+
+</html>
