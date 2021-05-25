@@ -135,16 +135,26 @@
                 users: {},
                 messages: [],
                 roomId: '...',
+                videoBandwidth: 500,
+                audioBandwidth: 50,
+
 
 
                 constraints: {
-                    audio: {
-                        echoCancellation: {
-                            exact: true,
-                        }
-                    },
+                    audio: true,
+                    // audio: {
+                    // echoCancellation: {
+                    //     exact: true,
+                    // }
+                    // },
                     video: {
-                        frameRate: 60,
+                        optional: [{
+                            minFrameRate: 60
+                        }, {
+                            maxWidth: 640
+                        }, {
+                            maxHeigth: 480
+                        }, ]
                     },
 
                 },
@@ -243,43 +253,118 @@
 
             methods: {
 
+                setMediaBitrate(sdp, media, bitrate) {
+
+
+                    var lines = sdp.split("\n");
+                    var line = -1;
+                    for (var i = 0; i < lines.length; i++) {
+                        if (lines[i].indexOf("m=" + media) === 0) {
+                            line = i;
+                            break;
+                        }
+                    }
+                    if (line === -1) {
+                        console.debug("Could not find the m line for", media);
+                        return sdp;
+                    }
+                    console.debug("Found the m line for", media, "at line", line);
+
+                    // Pass the m line
+                    line++;
+
+                    // Skip i and c lines
+                    while (lines[line].indexOf("i=") === 0 || lines[line].indexOf("c=") === 0) {
+                        line++;
+                    }
+
+                    // If we're on a b line, replace it
+                    if (lines[line].indexOf("b") === 0) {
+                        console.debug("Replaced b line at line", line);
+                        lines[line] = "b=AS:" + bitrate;
+                        return lines.join("\n");
+                    }
+
+                    // Add a new b line
+                    console.debug("Adding new b line before line", line);
+                    var newLines = lines.slice(0, line)
+                    newLines.push("b=AS:" + bitrate)
+                    newLines = newLines.concat(lines.slice(line, lines.length))
+
+
+                    return newLines.join("\n")
+
+
+                },
+
+
+
                 async shareScreen() {
+
+                    // await this.socket.disconnect()
+
+
                     let localVideoElement = document.getElementById('local-video')
 
-                    await navigator.mediaDevices.getDisplayMedia(this.screenShareConstraints).then(stream => {
+                    await navigator.mediaDevices.getDisplayMedia(this.screenShareConstraints).then(async(stream) => {
 
-                        // console.log(`local-stream`, stream)
+                        // this.localStream = null
 
+                        // if (this.localStream != null) return
+
+                        // else {
+
+                        this.localStream = stream
                         localVideoElement.srcObject = stream
 
-                        this.localStream = null
-                        this.localStream = stream
+                        //     // this.socket.disconnect()
 
-                        this.socket.emit('join-room', this.roomId)
+                        //     await this.socket.emit('share-screen', this.roomId)
+
+                        // }
+
+                        await this.socket.emit('join-room', this.roomId)
+
 
                     })
                 },
 
-                replaceStream(userId) {
+                async replaceStream(userId) {
 
-                    // console.log('adding-screen-share-stream', userId)
+                    console.log('adding-screen-share-stream', userId)
+
+                    await this.socket.emit('join-room', this.roomId)
+
+                    // userId.replaceTrack()
 
                     // let userVideoElement = document.getElementById(userId)
 
                     // if (!userVideoElement) return
 
-                    // const tracks = userVideoElement.srcObject.getVideoTracks()
+                    // const track = userVideoElement.srcObject.getVideoTracks()[0]
 
-                    // console.log(tracks)
+                    // console.log(track)
+
+
+                    // this.users[userId].replaceTrack(
+                    //     this.users[userId].streams[0].getVideoTracks()[0],
+                    //     this.localStream.getVideoTracks()[0],
+                    //     peer.peer.streams[0]
+                    // )
+
+                    // this.users[userId].replaceTrack()
+
+                    // console.log(this.users[userId])
 
                     // tracks.stop()
 
                     // tracks.forEach(track => {
 
-                    //     track.stop()
 
-                    //     console.log(track)
+
+
                     // });
+                    // }
                 },
 
                 sendInvite() {
@@ -401,7 +486,14 @@
                     this.users[userId] = new SimplePeer({
                         initiator: isInitiator,
                         stream: this.localStream,
-                        config: this.configuration
+                        config: this.configuration,
+                        trickle: false,
+                        sdpTransform: (sdp) => {
+                            const sdp2 = this.setMediaBitrate(this.setMediaBitrate(sdp, 'video', this.videoBandwidth), 'audio', this.audioBandwidth);
+                            console.log('managing bitrate...');
+                            return sdp2;
+                        },
+                        reconnectTimer: 5000,
                     })
 
                     this.users[userId].on('signal', data => {
@@ -427,7 +519,7 @@
 
                         videoGrid.appendChild(videoElement)
 
-                        console.log(videoElement.currentTime)
+                        // console.log(videoElement.currentTime)
                     })
 
                 },
@@ -454,6 +546,12 @@
         }, )
     </script>
 </body>
+
+</html>
+
+</html>
+
+</html>
 
 </html>
 

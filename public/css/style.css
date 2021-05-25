@@ -145,14 +145,14 @@ footer {
 }
 
 .chats-container {
-    background: #111111;
-    width: 386px;
     height: 68vh;
     position: fixed;
-    left: 74%;
-    top: 13rem;
     color: #fff;
     z-index: 11;
+    width: 390px;
+    right: 13px;
+    bottom: 9px;
+    background: white;
 }
 
 .chats-container header {
@@ -160,7 +160,9 @@ footer {
     align-items: center;
     justify-content: space-between;
     padding: 8px 15px;
-    font-weight: bolder;
+    font-weight: bold;
+    color: #000;
+    border-bottom: 1px solid #dbdbdb;
 }
 
 .chats-close-btn {
@@ -176,6 +178,7 @@ footer {
     align-items: center;
     justify-content: space-between;
     background: #fff;
+    border-top: 1px solid #dbdbdb;
 }
 
 .input-container input {
@@ -200,11 +203,13 @@ footer {
 }
 
 .messages-main p {
-    background: #ffffff;
+    background: lightblue;
     color: #000;
     margin-bottom: 14px;
     padding: 8px;
     border-radius: 5px;
+    display: block;
+    width: fit-content;
 }
 
 .bottom-controls-wrapper {
@@ -278,4 +283,17 @@ footer {
 .success:hover,
 .bottom-controls .icon-container .success:hover {
     background: rgb(2, 109, 2);
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #bfbfbf;
+    border-radius: 21px;
 }

@@ -69,13 +69,15 @@ io.on('connection', (socket) => {
     socket.on('share-screen', roomId => {
         console.log('share-screen ' + roomId)
 
+        socket.socket.id.reconnect();
+
         socket.broadcast.to(roomId).emit('got-share-screen', socket.id)
     })
 
 })
 
 
-const port = process.env.PORT || 5000
+const port = process.env.PORT || 2010
 server.listen(port, () => {
     console.log(`Express server listening on port ${port}`)
 })
