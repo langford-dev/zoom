@@ -81,7 +81,7 @@
                     <p>Share screen</p>
                 </div>
 
-                <div @click="shareScreen" class="icon-container">
+                <div @click="sendInvite" class="icon-container">
                     <div class="icon success">
                         <img src="./assets/link.svg" alt="">
                     </div>
@@ -116,6 +116,8 @@
 
         <div id="video-grid"></div>
         <video id="local-video" autoplay muted></video>
+
+        <input id="invite-link" disabled style="display: none;" />
 
         <!-- <footer>&copy;2021 - 2020 Boom.co</footer> -->
 
@@ -298,8 +300,6 @@
                     newLines.push("b=AS:" + bitrate)
                     newLines = newLines.concat(lines.slice(line, lines.length))
 
-                    console.log('newLines', newLines)
-
                     return newLines.join("\n")
 
                     // var line = -1;
@@ -413,9 +413,18 @@
                 },
 
                 sendInvite() {
+
+                    var t = document.getElementById("invite-link");
+                    let url = document.createElement("textarea");
+                    // let c = url.createTextRange();
+
+                    url.innerHTML = window.location.href;
+                    // c.execCommand("copy");
+
+
                     // this.roomId.setSelectionRange(0, 999999)
 
-                    var link = this.roomId
+                    // var link = this.roomId
 
                     document.execCommand("copy")
                 },

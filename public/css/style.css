@@ -32,7 +32,7 @@ body {
 }
 
 #join-button:hover {
-    background-color: #2295ba;
+    background-color: #2472E3;
 }
 
 #room-selection-container {
@@ -107,13 +107,14 @@ footer {
 }
 
 #local-video {
-    max-height: 145px;
-    max-width: 145px;
+    max-width: 122px;
     position: fixed;
     bottom: 0rem;
     left: 0;
     margin: 10px;
     border-radius: 6px;
+    background: #151515;
+    border: 2px solid #151515;
 }
 
 #remote-video,
@@ -121,7 +122,7 @@ footer {
     /* min-width: 30%; */
     /* min-width: 480px; */
     /* flex: 1 1 auto; */
-    border: 2px solid #000;
+    border: 2px solid #151515;
     border-radius: 6px;
     /*
     width: fit-content;
@@ -131,8 +132,8 @@ footer {
 }
 
 .icon-btn {
-    /* background: #2295ba; */
-    background: #353535;
+    /* background: #2472E3; */
+    background: #1D1D1F;
     padding: 11px 15px 13px 15px;
     color: #fff;
     border-radius: 7px;
@@ -233,9 +234,11 @@ footer {
     display: flex;
     background: #22222299;
     padding: 12px;
-    border: 1px solid #3a3a3a;
-    margin: 5px;
+    /* border: 1px solid #3a3a3a; */
+    margin: 11px;
     z-index: 11111;
+    border-radius: 9px;
+    padding-top: 17px;
 }
 
 .bottom-controls .icon-container {
@@ -264,7 +267,7 @@ footer {
 }
 
 .bottom-controls .primary-color-btn {
-    background: #2295ba;
+    background: #2472E3;
 }
 
 .bottom-controls .mute-btn {
@@ -320,6 +323,9 @@ footer {
     .remote-video {
         width: 99%;
         margin-left: 4px;
+    }
+    #local-video {
+        max-width: 122px
     }
     .room-name {
         font-size: 16px;
